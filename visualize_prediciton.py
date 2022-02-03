@@ -7,7 +7,7 @@ if __name__ == '__main__':
     semeval07 = 'WSD_Evaluation_Framework/Evaluation_Datasets/semeval2007'
     eval_data = load_data(semeval07, 'semeval2007')
 
-    predictions_path = 'wsd-biencoder/semeval2007_predictions.txt'
+    predictions_path = 'WSD_Evaluation_Framework/Evaluation_Datasets/inference/semeval2007_predictions.txt'
     preds = {}
     with open(predictions_path, 'r', encoding='utf-8') as f:
         for line in f:
