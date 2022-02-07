@@ -65,7 +65,7 @@ parser.add_argument('--balanced', action='store_true',
 parser.add_argument('--eval', action='store_true',
 	help='Flag to set script to evaluate probe (rather than train)')
 parser.add_argument('--split', type=str, default='semeval2007',
-	choices=['semeval2007', 'senseval2', 'senseval3', 'semeval2013', 'semeval2015', 'ALL', 'all-test'],
+	choices=['semeval2007', 'senseval2', 'senseval3', 'semeval2013', 'semeval2015', 'ALL', 'all-test', 'moh'],
 	help='Which evaluation split on which to evaluate probe')
 
 #uses these two gpus if training in multi-gpu
@@ -481,7 +481,7 @@ def evaluate_model(args, is_inference=False):
 	model = BiEncoderModel(args.encoder_name, freeze_gloss=args.freeze_gloss, freeze_context=args.freeze_context)
 	model_path = os.path.join(args.ckpt, 'best_model.ckpt')
 	model.load_state_dict(torch.load(model_path))
-	# model = model.cuda()
+	model = model.cuda()
 
 	'''
 	LOAD TOKENIZER

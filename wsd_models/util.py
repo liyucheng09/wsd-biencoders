@@ -158,7 +158,7 @@ def load_data(datapath, name):
 	return sentences
 
 def load_inference_data(datapath, name):
-	text_path = os.path.join(datapath, 'wsd.inference.tsv')
+	text_path = os.path.join(datapath, f'{name}.wsd.inference.tsv')
 	sentences = []
 	s=[]
 	with open(text_path, 'r', encoding='utf-8') as f:
@@ -169,7 +169,7 @@ def load_inference_data(datapath, name):
 					sentences.append(s)
 					s=[]
 				continue
-			word, lemma, pos, sense_inst, sense_label = line.split('\t')
+			word, lemma, pos, sense_inst, sense_label = line.split('\t')[:5]
 			if sense_inst == '-1':
 				sense_inst = int(sense_inst)
 				sense_label = int(sense_label)
