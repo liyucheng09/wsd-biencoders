@@ -316,7 +316,7 @@ def _eval(eval_data, model, gloss_dict, multigpu=False):
 			if multigpu:
 				context_ids = context_ids.to(context_device)
 				context_attn_mask = context_attn_mask.to(context_device)
-			else:
+			elif torch.cuda.is_available():
 				context_ids = context_ids.cuda()
 				context_attn_mask = context_attn_mask.cuda()
 			context_output = model.context_forward(context_ids, context_attn_mask, context_output_mask)
@@ -327,7 +327,7 @@ def _eval(eval_data, model, gloss_dict, multigpu=False):
 				if multigpu:
 					gloss_ids = gloss_ids.to(gloss_device)
 					gloss_attn_mask = gloss_attn_mask.to(gloss_device)
-				else:
+				elif torch.cuda.is_available():
 					gloss_ids = gloss_ids.cuda()
 					gloss_attn_mask = gloss_attn_mask.cuda()
 				gloss_output = model.gloss_forward(gloss_ids, gloss_attn_mask)
@@ -338,6 +338,7 @@ def _eval(eval_data, model, gloss_dict, multigpu=False):
 					output = output.cpu()
 					gloss_output = gloss_output.cpu()
 				output = torch.mm(output, gloss_output)
+				output = output.softmax(dim=1)
 				pred_value, pred_idx = output.topk(1, dim=-1)
 				pred_value, pred_idx = pred_value.squeeze().item(), pred_idx.squeeze().item()
 				
@@ -488,7 +489,8 @@ def evaluate_model(args, is_inference=False):
 	model = BiEncoderModel(args.encoder_name, freeze_gloss=args.freeze_gloss, freeze_context=args.freeze_context)
 	model_path = os.path.join(args.ckpt, 'best_model.ckpt')
 	model.load_state_dict(torch.load(model_path))
-	model = model.cuda()
+	if torch.cuda.is_available():
+		model = model.cuda()
 
 	'''
 	LOAD TOKENIZER
