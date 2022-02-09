@@ -6,6 +6,7 @@ This source code is licensed under the license found in the
 LICENSE file in the root directory of this source tree.
 '''
 
+from cProfile import label
 import torch
 from torch.nn import functional as F
 from nltk.corpus import wordnet as wn
@@ -309,7 +310,7 @@ def _train(train_data, model, gloss_dict, optim, schedule, criterion, gloss_bsz=
 def _eval(eval_data, model, gloss_dict, multigpu=False):
 	model.eval()
 	eval_preds = []
-	for context_ids, context_attn_mask, context_output_mask, example_keys, insts, _ in eval_data:
+	for context_ids, context_attn_mask, context_output_mask, example_keys, insts, glabel in eval_data:
 		with torch.no_grad(): 
 			#run example through model
 			if multigpu:
@@ -337,9 +338,15 @@ def _eval(eval_data, model, gloss_dict, multigpu=False):
 					output = output.cpu()
 					gloss_output = gloss_output.cpu()
 				output = torch.mm(output, gloss_output)
-				pred_idx = output.topk(1, dim=-1)[1].squeeze().item()
+				pred_value, pred_idx = output.topk(1, dim=-1)
+				pred_value, pred_idx = pred_value.squeeze().item(), pred_idx.squeeze().item()
+				
+				glabel = glabel[0]
 				pred_label = sense_keys[pred_idx]
-				eval_preds.append((inst, pred_label))
+				gold_idx = sense_keys.index(glabel) if glabel in sense_keys else None
+				gold_value = output[:, gold_idx] if glabel in sense_keys else None
+				gold_value = gold_value.squeeze().item()
+				eval_preds.append((inst, pred_label, pred_value, glabel, gold_value))
 
 	return eval_preds
 
@@ -513,8 +520,8 @@ def evaluate_model(args, is_inference=False):
 	#generate predictions file
 	pred_filepath = os.path.join(args.ckpt, './{}_predictions.txt'.format(args.split))
 	with open(pred_filepath, 'w') as f:
-		for inst, prediction in eval_preds:
-			f.write('{} {}\n'.format(inst, prediction))
+		for inst, prediction, pred_value, label, gold_value in eval_preds:
+			f.write('{} {} {} {} {}\n'.format(inst, prediction, pred_value, label, gold_value))
 
 	#run predictions through scorer
 	gold_filepath = os.path.join(eval_path, '{}.gold.key.txt'.format(args.split))
